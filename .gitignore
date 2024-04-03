@@ -1,0 +1,7 @@
+app/*
+!app/index.php
+docker/mysql/data
+
+.idea
+.env
+*.log

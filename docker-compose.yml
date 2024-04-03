@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  php-fpm:
+    build:
+      context: ./docker/php-fpm
+    volumes:
+      - ./app:/var/www/html
+      - ./docker/php-fpm/log:/var/log/php
+      - ./docker/php-fpm/php.ini:/usr/local/etc/php/php.ini
+      - ./docker/php-fpm/conf.d:/usr/local/etc/php/conf.d
+    networks:
+      - resolution07
+  nginx:
+    build:
+      context: ./docker/nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - mysql
+    volumes:
+      - ./app:/var/www/html
+      - ./docker/nginx/log:/var/log/nginx
+      - ./docker/nginx/config:/etc/nginx/conf.d
+    links:
+      - php-fpm
+    networks:
+      - resolution07
+  mysql:
+    build:
+      context: ./docker/mysql
+    volumes:
+      - ./docker/mysql/data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+    networks:
+      - resolution07
+
+
+networks:
+  resolution07:
+    driver: bridge
