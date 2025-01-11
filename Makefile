@@ -1,17 +1,20 @@
 build:
 	docker-compose build
 
-run:
+up:
 	docker-compose up -d
 
-build-run:
+build-up:
 	docker-compose up -d --build
 
 down:
 	docker-compose down
 
+reload:
+	docker-compose reload
+
 php-bash:
-	docker-compose exec php-fpm /bin/sh
+	docker-compose exec php-fpm bash
 
 remove-logs:
 	echo "Remove logs..."

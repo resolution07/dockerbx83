@@ -1,52 +1,55 @@
 FROM php:8.3-fpm-alpine
 
+# Устанавливаем постоянные зависимости
 RUN apk add --no-cache \
-    mysql-client \
-    msmtp  \
-    perl  \
-    wget  \
-    procps  \
-    shadow  \
-    libzip  \
-    libpng  \
-    libjpeg-turbo  \
-    libwebp  \
-    freetype  \
-    icu  \
-    icu-data-full
+    icu-data-full \
+    shadow \
+    msmtp \
+    perl \
+    wget \
+    procps \
+    bash \
+    libzip \
+    libpng \
+    libjpeg-turbo \
+    libwebp \
+    freetype \
+    icu \
+    zlib \
+    imagemagick
 
-RUN apk add --no-cache --virtual build-essentials \
-    icu-dev  \
-    icu-libs  \
-    zlib-dev  \
-    g++  \
-    make  \
-    automake  \
-    autoconf  \
+# Временные зависимости и безопасная установка Composer
+RUN apk add --no-cache --virtual .build-deps \
+    icu-dev \
+    zlib-dev \
     libzip-dev \
-    libpng-dev  \
-    libwebp-dev  \
-    libjpeg-turbo-dev  \
+    libpng-dev \
+    libwebp-dev \
+    libjpeg-turbo-dev \
     freetype-dev && \
-    docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg --with-webp && \
-    docker-php-ext-install gd && \
-    docker-php-ext-install mysqli && \
-    docker-php-ext-install pdo_mysql && \
-    docker-php-ext-install intl && \
-    docker-php-ext-install opcache && \
-    docker-php-ext-install exif && \
-    docker-php-ext-install zip && \
-    apk del build-essentials && rm -rf /usr/src/php*
+    docker-php-ext-configure gd \
+        --enable-gd \
+        --with-freetype \
+        --with-jpeg \
+        --with-webp && \
+    docker-php-ext-install -j$(nproc) \
+        gd \
+        mysqli \
+        pdo_mysql \
+        intl \
+        opcache \
+        exif \
+        zip && \
+    apk del .build-deps && \
+    rm -rf /tmp/*
 
-RUN wget https://getcomposer.org/composer-stable.phar -O /usr/local/bin/composer &&  \
-    chmod +x /usr/local/bin/composer
+# Composer (без strict проверок для скорости)
+COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 
+# Настройка пользователя и прав
 RUN usermod -u 1000 www-data \
-    && chmod 777 -R /tmp \
-    && chmod o+t -R /tmp \
-    && chmod 755 -R /var/www \
-    && chmod o+t -R /var/www
+    && chown -R www-data:www-data /var/www \
+    && chmod 1777 /tmp
 
 USER www-data
-
 WORKDIR /var/www/html

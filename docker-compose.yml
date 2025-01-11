@@ -1,32 +1,37 @@
-version: '3.8'
-
 services:
-  php-fpm:
-    build:
-      context: ./docker/php-fpm
-    volumes:
-      - ./app:/var/www/html
-      - ./docker/php-fpm/log:/var/log/php
-      - ./docker/php-fpm/php.ini:/usr/local/etc/php/php.ini
-      - ./docker/php-fpm/conf.d:/usr/local/etc/php/conf.d
-    networks:
-      - resolution07
   nginx:
     build:
       context: ./docker/nginx
     ports:
       - "80:80"
-      - "443:443"
-    depends_on:
-      - mysql
     volumes:
       - ./app:/var/www/html
       - ./docker/nginx/log:/var/log/nginx
       - ./docker/nginx/config:/etc/nginx/conf.d
-    links:
-      - php-fpm
+      - ./docker/nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      php-fpm:
+        condition: service_healthy
     networks:
-      - resolution07
+      - bitrix
+
+  php-fpm:
+    build:
+      context: ./docker/php-fpm
+    volumes:
+      - ./app:/var/www/html:cached
+      - ./docker/php-fpm/log:/var/log/php
+      - ./docker/php-fpm/www.conf:/usr/local/etc/php-fpm.d/www.conf
+      - ./docker/php-fpm/php.ini:/usr/local/etc/php/php.ini
+      - ./docker/php-fpm/conf.d:/usr/local/etc/php/conf.d
+    healthcheck:
+      test: [ "CMD-SHELL", "php-fpm -t || exit 1" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - bitrix
+
   mysql:
     build:
       context: ./docker/mysql
@@ -40,9 +45,8 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_USER: ${DB_USERNAME}
     networks:
-      - resolution07
-
+      - bitrix
 
 networks:
-  resolution07:
+  bitrix:
     driver: bridge
