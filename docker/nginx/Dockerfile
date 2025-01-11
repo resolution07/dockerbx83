@@ -1,3 +1,3 @@
-FROM nginx:1.20.0-alpine
+FROM nginx:1.22.0-alpine
 
 WORKDIR /var/www/html
